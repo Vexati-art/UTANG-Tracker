@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+<meta charset="UTF-8">
+<title>Utang Tracker</title>
+<style>
+  :root {
+    --paper: #F6F3EC;
+    --ink: #262220;
+    --ink-soft: #6b625c;
+    --peso: #16624A;
+    --peso-soft: #DCEDE6;
+    --line: #DAD3C7;
+    --unpaid: #C0392B;
+    --unpaid-soft: #F7E3E0;
+    --card: #FFFFFF;
+    --accent2: #9C5B2E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 6px;
+  }
+  .masthead h1 { font-size: 30px; margin: 0; letter-spacing: 0.5px; cursor: pointer; }
+  .masthead .tag {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+  }
+  .sub {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 28px;
+    letter-spacing: 0.5px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  label:first-child { margin-top: 0; }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    font-family: Georgia, serif;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--peso); outline-offset: 1px; }
+
+  button {
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 12px;
+    font-weight: bold;
+    border: none;
+    border-radius: 3px;
+    padding: 13px 20px;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--peso); color: white; width: 100%; margin-top: 22px; }
+  .btn-primary:hover { background: #114e3c; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover { border-color: var(--ink); color: var(--ink); }
+  .btn-danger { color: var(--unpaid); }
+  .btn-add {
+    background: var(--ink);
+    color: white;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .btn-add:hover { background: #000; }
+  .btn-back {
+    background: transparent;
+    border: none;
+    color: var(--ink-soft);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0 0 16px;
+  }
+  .btn-back:hover { color: var(--ink); }
+
+  /* Overview summary */
+  .summary-row { display: flex; gap: 14px; margin-bottom: 20px; }
+  .stat {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .stat .num { font-size: 22px; font-weight: bold; }
+  .stat .lbl {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  .progress-track {
+    height: 10px;
+    background: var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 14px 0 6px;
+  }
+  .progress-fill { height: 100%; background: var(--peso); transition: width 0.4s ease; }
+  .progress-caption {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .loan-name { font-size: 20px; margin: 0 0 2px; }
+
+  .sched-title {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+    margin: 28px 0 10px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+  }
+
+  /* Loan product cards on dashboard */
+  .product-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--peso);
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease;
+  }
+  .product-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .product-card.done { border-left-color: var(--ink-soft); opacity: 0.75; }
+  .product-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .product-name { font-size: 17px; font-weight: bold; }
+  .product-remaining { font-family: 'Courier New', monospace; font-weight: bold; }
+  .product-meta {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .mini-track {
+    height: 6px;
+    background: var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .mini-fill { height: 100%; background: var(--peso); }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: none; }
+  .check {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid var(--peso); background: transparent;
+    flex-shrink: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: transparent;
+  }
+  .check.paid { background: var(--peso); color: white; }
+  .row.overdue .check { border-color: var(--unpaid); }
+  .row-info { flex: 1; }
+  .row-month { font-weight: bold; font-size: 15px; }
+  .row-date { font-family: 'Courier New', monospace; font-size: 11px; color: var(--ink-soft); }
+  .row-amount { font-family: 'Courier New', monospace; font-weight: bold; font-size: 15px; }
+  .badge {
+    font-family: 'Courier New', monospace; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 3px 7px; border-radius: 10px; margin-left: 8px;
+  }
+  .badge.due { background: var(--unpaid-soft); color: var(--unpaid); }
+
+  .footer-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .footer-actions button { flex: 1; }
+
+  .empty-note { font-size: 14px; color: var(--ink-soft); line-height: 1.5; text-align: center; padding: 30px 10px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead" onclick="goDashboard()">
+    <h1>Utang Tracker</h1>
+    <span class="tag">Piso by Piso</span>
+  </div>
+  <div class="sub">para sa monthly installments — Home Credit, gadget loan, appliance, atbp.</div>
+
+  <!-- DASHBOARD (overview ng lahat ng products) -->
+  <div id="dashboardView">
+    <div class="summary-row">
+      <div class="stat">
+        <div class="num" id="ovTotalRemaining">₱0</div>
+        <div class="lbl">Kabuuang Balance</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="ovMonthly">₱0</div>
+        <div class="lbl">Buwanang Bayarin</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="ovCount">0</div>
+        <div class="lbl">Aktibong Loan</div>
+      </div>
+    </div>
+
+    <button class="btn-add" onclick="showSetup()">+ Bagong Product</button>
+
+    <div id="productList"></div>
+  </div>
+
+  <!-- SETUP FORM (bagong product) -->
+  <div class="card hidden" id="setupCard">
+    <button class="btn-back" onclick="goDashboard()">← Balik sa Dashboard</button>
+    <p class="empty-note" style="text-align:left; padding: 0 0 6px;">I-set up ang bagong loan/product para masimulan ang pag-track.</p>
+    <label for="loanName">Pangalan ng Product</label>
+    <input id="loanName" placeholder="hal. Home Credit — Cellphone">
+
+    <label for="principal">Kabuuang Utang (₱)</label>
+    <input id="principal" type="number" inputmode="decimal" placeholder="hal. 15000" oninput="autoCalcMonthly()">
+
+    <label for="terms">Bilang ng Buwan (Terms)</label>
+    <input id="terms" type="number" inputmode="numeric" placeholder="hal. 12" oninput="autoCalcMonthly()">
+
+    <label for="interestRate">Interest Rate — Optional (%)</label>
+    <input id="interestRate" type="number" inputmode="decimal" placeholder="hal. 5 (iwan blangko kung wala)" oninput="autoCalcMonthly()">
+
+    <label for="monthly">
+      Buwanang Bayad (₱)
+      <span id="autoCalcTag" style="text-transform:none; letter-spacing:0; color: var(--peso);"></span>
+    </label>
+    <input id="monthly" type="number" inputmode="decimal" placeholder="awtomatikong kakalkulahin, o ilagay mo na kung alam mo na" oninput="monthlyManuallyEdited = true; updateAutoCalcTag();">
+    <div class="row-date" id="calcHint" style="margin-top: 6px;"></div>
+
+    <label for="startDate">Petsa ng Unang Bayad</label>
+    <input id="startDate" type="date">
+
+    <button class="btn-primary" onclick="createLoan()">Idagdag ang Product</button>
+  </div>
+
+  <!-- DETAIL VIEW (isang loan lang) -->
+  <div id="detailView" class="hidden">
+    <button class="btn-back" onclick="goDashboard()">← Balik sa Dashboard</button>
+    <div class="card">
+      <h2 class="loan-name" id="dbLoanName"></h2>
+      <div class="row-date" id="dbInterestNote" style="margin-bottom: 10px;"></div>
+      <div class="progress-caption">
+        <span id="dbPaidCount"></span>
+        <span id="dbPercent"></span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="dbProgressFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="summary-row">
+      <div class="stat">
+        <div class="num" id="statRemaining">₱0</div>
+        <div class="lbl">Natitirang Balance</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="statNextDue">—</div>
+        <div class="lbl">Susunod na Due</div>
+      </div>
+      <div class="stat" id="statInterestCard">
+        <div class="num" id="statInterest">0%</div>
+        <div class="lbl">Interest Rate</div>
+      </div>
+    </div>
+
+    <div class="sched-title">Schedule ng Bayaran</div>
+    <div class="card" id="scheduleList" style="padding: 6px 20px;"></div>
+
+    <div class="footer-actions">
+      <button class="btn-ghost btn-danger" onclick="deleteLoan()">🗑 Burahin ang Product na Ito</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let loans = [];
+let currentLoanId = null;
+let view = 'dashboard'; // 'dashboard' | 'setup' | 'detail'
+
+function peso(n) {
+  return '₱' + Number(n).toLocaleString('en-PH', {maximumFractionDigits: 2});
+}
+function fmtDate(d) {
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-PH', {month: 'short', day: 'numeric', year: 'numeric'});
+}
+function addMonths(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setMonth(d.getMonth() + n);
+  return d.toISOString().slice(0, 10);
+}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function uid() { return 'loan_' + Date.now() + '_' + Math.floor(Math.random()*1000); }
+
+async function loadState() {
+  try {
+    const res = await window.storage.get('loans-state', false);
+    if (res && res.value) {
+      const parsed = JSON.parse(res.value);
+      loans = parsed.loans || [];
+    }
+  } catch (e) {
+    // wala pang laman
+  }
+  renderAll();
+}
+
+async function saveState() {
+  try {
+    await window.storage.set('loans-state', JSON.stringify({loans}), false);
+  } catch (e) {
+    console.error('Hindi na-save:', e);
+  }
+}
+
+let monthlyManuallyEdited = false;
+
+function showSetup() {
+  view = 'setup';
+  monthlyManuallyEdited = false;
+  document.getElementById('autoCalcTag').textContent = '';
+  document.getElementById('calcHint').textContent = '';
+  renderAll();
+}
+
+function autoCalcMonthly() {
+  if (monthlyManuallyEdited) return;
+
+  const principal = parseFloat(document.getElementById('principal').value);
+  const terms = parseInt(document.getElementById('terms').value);
+  const rate = parseFloat(document.getElementById('interestRate').value) || 0;
+
+  if (principal > 0 && terms > 0) {
+    const totalPayable = principal + (principal * rate / 100);
+    const monthlyCalc = totalPayable / terms;
+    document.getElementById('monthly').value = monthlyCalc.toFixed(2);
+    document.getElementById('calcHint').textContent =
+      `Awtomatikong kalkulasyon: (₱${principal.toLocaleString('en-PH')} + ${rate}% interest) ÷ ${terms} buwan = ${peso(monthlyCalc)}/buwan`;
+  } else {
+    document.getElementById('calcHint').textContent = '';
+  }
+  updateAutoCalcTag();
+}
+
+function updateAutoCalcTag() {
+  const tag = document.getElementById('autoCalcTag');
+  tag.textContent = monthlyManuallyEdited ? '(manual)' : '(auto)';
+}
+function goDashboard() {
+  view = 'dashboard';
+  currentLoanId = null;
+  renderAll();
+}
+function openLoan(id) {
+  view = 'detail';
+  currentLoanId = id;
+  renderAll();
+}
+
+function createLoan() {
+  const name = document.getElementById('loanName').value.trim() || 'Aking Utang';
+  const principal = parseFloat(document.getElementById('principal').value);
+  const monthly = parseFloat(document.getElementById('monthly').value);
+  const terms = parseInt(document.getElementById('terms').value);
+  const startDate = document.getElementById('startDate').value;
+  const interestRateRaw = document.getElementById('interestRate').value;
+  const interestRate = interestRateRaw ? parseFloat(interestRateRaw) : 0;
+
+  if (!monthly || !terms || !startDate) {
+    alert('Pakikumpleto ang Buwanang Bayad, Bilang ng Buwan, at Petsa ng Unang Bayad.');
+    return;
+  }
+
+  const basePrincipal = principal || (monthly * terms);
+  const payments = [];
+  for (let i = 0; i < terms; i++) {
+    payments.push({
+      month: i + 1,
+      dueDate: addMonths(startDate, i),
+      amount: monthly,
+      paid: false
+    });
+  }
+
+  const newLoan = {
+    id: uid(),
+    name, principal: basePrincipal, monthly, terms, startDate, interestRate,
+    payments
+  };
+  loans.push(newLoan);
+
+  // clear form
+  ['loanName','principal','monthly','terms','startDate','interestRate'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  monthlyManuallyEdited = false;
+  document.getElementById('autoCalcTag').textContent = '';
+  document.getElementById('calcHint').textContent = '';
+
+  saveState();
+  goDashboard();
+}
+
+function deleteLoan() {
+  if (!confirm('Sigurado ka bang burahin ang product na ito?')) return;
+  loans = loans.filter(l => l.id !== currentLoanId);
+  saveState();
+  goDashboard();
+}
+
+function togglePaid(idx) {
+  const loan = loans.find(l => l.id === currentLoanId);
+  loan.payments[idx].paid = !loan.payments[idx].paid;
+  saveState();
+  renderAll();
+}
+
+function loanStats(loan) {
+  const paidCount = loan.payments.filter(p => p.paid).length;
+  const totalCount = loan.payments.length;
+  const remaining = loan.payments.filter(p => !p.paid).reduce((s, p) => s + p.amount, 0);
+  const percent = totalCount ? Math.round((paidCount / totalCount) * 100) : 0;
+  const nextUnpaid = loan.payments.find(p => !p.paid);
+  return { paidCount, totalCount, remaining, percent, nextUnpaid, done: paidCount === totalCount };
+}
+
+function renderAll() {
+  document.getElementById('dashboardView').classList.toggle('hidden', view !== 'dashboard');
+  document.getElementById('setupCard').classList.toggle('hidden', view !== 'setup');
+  document.getElementById('detailView').classList.toggle('hidden', view !== 'detail');
+
+  if (view === 'dashboard') renderDashboard();
+  if (view === 'detail') renderDetail();
+}
+
+function renderDashboard() {
+  let totalRemaining = 0, totalMonthly = 0, activeCount = 0;
+  loans.forEach(loan => {
+    const s = loanStats(loan);
+    totalRemaining += s.remaining;
+    if (!s.done) { totalMonthly += loan.monthly; activeCount++; }
+  });
+
+  document.getElementById('ovTotalRemaining').textContent = peso(totalRemaining);
+  document.getElementById('ovMonthly').textContent = peso(totalMonthly);
+  document.getElementById('ovCount').textContent = activeCount;
+
+  const list = document.getElementById('productList');
+  list.innerHTML = '';
+
+  if (loans.length === 0) {
+    list.innerHTML = '<div class="empty-note">Wala ka pang na-a-add na loan/product.<br>I-click ang "+ Bagong Product" sa itaas para magsimula.</div>';
+    return;
+  }
+
+  loans.forEach(loan => {
+    const s = loanStats(loan);
+    const card = document.createElement('div');
+    card.className = 'product-card' + (s.done ? ' done' : '');
+    card.onclick = () => openLoan(loan.id);
+    card.innerHTML = `
+      <div class="product-top">
+        <div class="product-name">${loan.name}</div>
+        <div class="product-remaining">${s.done ? 'Bayad na! 🎉' : peso(s.remaining)}</div>
+      </div>
+      <div class="product-meta">
+        <span>${s.paidCount}/${s.totalCount} buwan</span>
+        <span>${s.done ? '' : 'Next due: ' + fmtDate(s.nextUnpaid.dueDate)}</span>
+      </div>
+      <div class="mini-track"><div class="mini-fill" style="width:${s.percent}%"></div></div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderDetail() {
+  const loan = loans.find(l => l.id === currentLoanId);
+  if (!loan) { goDashboard(); return; }
+
+  document.getElementById('dbLoanName').textContent = loan.name;
+
+  const rate = loan.interestRate || 0;
+  const interestAmount = rate > 0 ? (loan.principal * rate / 100) : 0;
+  const totalPayable = loan.principal + interestAmount;
+  const scheduledTotal = loan.monthly * loan.terms;
+  const interestNote = document.getElementById('dbInterestNote');
+  if (rate > 0) {
+    interestNote.innerHTML =
+      `Principal: ${peso(loan.principal)} &nbsp;+&nbsp; Interest (${rate}%): ${peso(interestAmount)} &nbsp;=&nbsp; <strong>${peso(totalPayable)}</strong>` +
+      (Math.abs(scheduledTotal - totalPayable) > 1
+        ? `<br>Batay sa buwanang bayad × terms: ${peso(scheduledTotal)} (may pagkakaiba ng ${peso(Math.abs(scheduledTotal - totalPayable))})`
+        : '');
+  } else {
+    interestNote.textContent = `Principal: ${peso(loan.principal)} · Walang interest na naka-set`;
+  }
+  document.getElementById('statInterest').textContent = rate > 0 ? peso(interestAmount) : '—';
+  document.getElementById('statInterestCard').querySelector('.lbl').textContent = rate > 0 ? `Interest (${rate}%)` : 'Interest Rate';
+
+  const s = loanStats(loan);
+  document.getElementById('dbPaidCount').textContent = `${s.paidCount} / ${s.totalCount} buwan nabayaran`;
+  document.getElementById('dbPercent').textContent = `${s.percent}%`;
+  document.getElementById('dbProgressFill').style.width = s.percent + '%';
+  document.getElementById('statRemaining').textContent = peso(s.remaining);
+
+  const today = todayStr();
+  document.getElementById('statNextDue').textContent = s.nextUnpaid ? fmtDate(s.nextUnpaid.dueDate) : 'Tapos na! 🎉';
+
+  const list = document.getElementById('scheduleList');
+  list.innerHTML = '';
+  loan.payments.forEach((p, idx) => {
+    const isOverdue = !p.paid && p.dueDate < today;
+    const row = document.createElement('div');
+    row.className = 'row' + (isOverdue ? ' overdue' : '');
+    row.innerHTML = `
+      <div class="check ${p.paid ? 'paid' : ''}" onclick="togglePaid(${idx})">${p.paid ? '✓' : ''}</div>
+      <div class="row-info">
+        <div class="row-month">Buwan ${p.month}${isOverdue ? '<span class="badge due">Overdue</span>' : ''}</div>
+        <div class="row-date">${fmtDate(p.dueDate)}</div>
+      </div>
+      <div class="row-amount">${peso(p.amount)}</div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+loadState();
+</script>
+</body>
+</html>
